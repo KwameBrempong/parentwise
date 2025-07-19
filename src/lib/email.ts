@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer'
 import { env } from './env'
 
-export const emailTransporter = nodemailer.createTransporter({
+export const emailTransporter = nodemailer.createTransport({
   host: env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
   port: parseInt(env.EMAIL_SERVER_PORT || '587'),
   secure: false,
@@ -19,10 +19,10 @@ export async function sendVerificationRequest({
   identifier: string
   url: string
   provider: any
-}) {
+}): Promise<void> {
   const { host } = new URL(url)
   
-  const result = await emailTransporter.sendMail({
+  await emailTransporter.sendMail({
     to: email,
     from: env.EMAIL_FROM || 'noreply@parentwise.com',
     subject: `Sign in to ParentWise`,
@@ -67,8 +67,6 @@ export async function sendVerificationRequest({
       </div>
     `,
   })
-
-  return result
 }
 
 export async function sendWelcomeEmail(email: string, name: string) {

@@ -8,6 +8,7 @@ import { userService, auditService } from './db'
 import { env } from './env'
 import bcrypt from 'bcryptjs'
 import { sendVerificationRequest } from './email'
+import { UserRole, SubscriptionTier } from '@prisma/client'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
@@ -16,7 +17,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
-    signUp: '/auth/signup',
     error: '/auth/error',
     verifyRequest: '/auth/verify-request',
     newUser: '/onboarding',
@@ -30,7 +30,7 @@ export const authOptions: NextAuthOptions = {
     EmailProvider({
       server: {
         host: env.EMAIL_SERVER_HOST,
-        port: env.EMAIL_SERVER_PORT,
+        port: parseInt(env.EMAIL_SERVER_PORT || '587'),
         auth: {
           user: env.EMAIL_SERVER_USER,
           pass: env.EMAIL_SERVER_PASSWORD,
@@ -105,8 +105,8 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string
-        session.user.role = token.role as string
-        session.user.subscriptionTier = token.subscriptionTier as string
+        session.user.role = token.role as UserRole
+        session.user.subscriptionTier = token.subscriptionTier as SubscriptionTier
       }
       return session
     },
