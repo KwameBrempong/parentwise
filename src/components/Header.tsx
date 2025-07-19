@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { signOut } from 'next-auth/react';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,24 +42,52 @@ export default function Header() {
           
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              <button
-                onClick={() => scrollToSection('home')}
-                className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
-              >
-                Home
-              </button>
-              <button
-                onClick={() => scrollToSection('about')}
-                className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
-              >
-                About
-              </button>
-              <button
-                onClick={() => scrollToSection('contact')}
-                className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
-              >
-                Contact
-              </button>
+              {isAuthenticated ? (
+                <>
+                  <a
+                    href="/dashboard"
+                    className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    Dashboard
+                  </a>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-gray-600">Hi, {user?.name}</span>
+                    <button
+                      onClick={() => signOut({ callbackUrl: '/' })}
+                      className="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-md text-sm font-medium text-gray-700 transition-colors"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => scrollToSection('home')}
+                    className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    Home
+                  </button>
+                  <button
+                    onClick={() => scrollToSection('about')}
+                    className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    About
+                  </button>
+                  <button
+                    onClick={() => scrollToSection('contact')}
+                    className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    Contact
+                  </button>
+                  <a
+                    href="/auth/signin"
+                    className="text-primary-600 hover:text-primary-700 px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    Sign In
+                  </a>
+                </>
+              )}
             </div>
           </div>
 
