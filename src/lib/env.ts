@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   // Database
-  DATABASE_URL: z.string().url(),
-  DIRECT_URL: z.string().url().optional(),
+  DATABASE_URL: z.string().min(1),
+  DIRECT_URL: z.string().min(1).optional(),
 
   // NextAuth.js
   NEXTAUTH_URL: z.string().url(),

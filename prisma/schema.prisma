@@ -1,0 +1,542 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Enums for type safety
+enum UserRole {
+  PARENT
+  CHILD
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum ActivityType {
+  EDUCATIONAL
+  PHYSICAL
+  CREATIVE
+  SOCIAL
+  EMOTIONAL
+  COGNITIVE
+  ROUTINE
+}
+
+enum ActivityDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum MilestoneCategory {
+  PHYSICAL
+  COGNITIVE
+  LANGUAGE
+  SOCIAL_EMOTIONAL
+  ADAPTIVE
+}
+
+enum PlanStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+  PREMIUM_PLUS
+}
+
+enum NotificationType {
+  MILESTONE_REMINDER
+  ACTIVITY_SUGGESTION
+  PLAN_UPDATE
+  SYSTEM_NOTIFICATION
+}
+
+// Core User Management
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  role          UserRole @default(PARENT)
+  
+  // Profile information
+  dateOfBirth   DateTime?
+  gender        Gender?
+  phone         String?
+  timezone      String   @default("UTC")
+  language      String   @default("en")
+  
+  // Subscription and billing
+  subscriptionTier SubscriptionTier @default(FREE)
+  subscriptionId   String?
+  customerId       String? // Stripe customer ID
+  
+  // Preferences
+  preferences   Json?    // Store user preferences as JSON
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLoginAt   DateTime?
+  
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  familyMembers FamilyMember[]
+  children      Child[]
+  plans         ParentingPlan[]
+  activities    ActivityLog[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  
+  @@map("users")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Family Management
+model Family {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  
+  // Family settings
+  familyCode  String   @unique // For inviting family members
+  settings    Json?    // Family-specific settings
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  members     FamilyMember[]
+  children    Child[]
+  plans       ParentingPlan[]
+  activities  FamilyActivity[]
+  
+  @@map("families")
+}
+
+model FamilyMember {
+  id            String   @id @default(cuid())
+  familyId      String
+  userId        String
+  role          String   // "parent", "guardian", "grandparent", etc.
+  permissions   Json?    // Specific permissions within the family
+  isOwner       Boolean  @default(false)
+  
+  // Timestamps
+  joinedAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  family        Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([familyId, userId])
+  @@map("family_members")
+}
+
+// Child Profile Management
+model Child {
+  id              String   @id @default(cuid())
+  parentId        String
+  familyId        String?
+  
+  // Basic information
+  name            String
+  gender          Gender?
+  dateOfBirth     DateTime
+  profileImage    String?
+  
+  // Development information
+  currentStage    String?  // Development stage
+  interests       String[] // Array of interests
+  challenges      String[] // Current challenges
+  notes           String?  // Parent notes
+  
+  // Medical/Health information (encrypted)
+  allergies       String[]
+  medications     String[]
+  healthNotes     String?
+  
+  // Settings
+  settings        Json?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  parent          User     @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  family          Family?  @relation(fields: [familyId], references: [id])
+  milestones      Milestone[]
+  activities      ActivityLog[]
+  plans           ParentingPlan[]
+  assessments     ChildAssessment[]
+  
+  @@map("children")
+}
+
+// Developmental Milestones
+model Milestone {
+  id              String           @id @default(cuid())
+  childId         String
+  
+  // Milestone information
+  title           String
+  description     String
+  category        MilestoneCategory
+  ageRangeMin     Int              // In months
+  ageRangeMax     Int              // In months
+  
+  // Tracking
+  isCompleted     Boolean          @default(false)
+  completedAt     DateTime?
+  notes           String?
+  evidence        String[]         // Photos, videos, etc.
+  
+  // AI insights
+  aiInsights      Json?
+  
+  // Timestamps
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // Relations
+  child           Child            @relation(fields: [childId], references: [id], onDelete: Cascade)
+  
+  @@map("milestones")
+}
+
+// Child Assessment System
+model ChildAssessment {
+  id            String   @id @default(cuid())
+  childId       String
+  
+  // Assessment information
+  title         String
+  questions     Json     // Assessment questions and answers
+  scores        Json     // Assessment scores and results
+  insights      Json?    // AI-generated insights
+  
+  // Metadata
+  assessmentType String  // "development", "behavior", "learning", etc.
+  completedBy    String  // User ID who completed the assessment
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  child         Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  
+  @@map("child_assessments")
+}
+
+// Parenting Plans System
+model ParentingPlan {
+  id            String     @id @default(cuid())
+  parentId      String
+  childId       String?
+  familyId      String?
+  
+  // Plan information
+  title         String
+  description   String?
+  goals         Json       // Array of goals
+  strategies    Json       // Parenting strategies
+  timeline      Json       // Timeline and milestones
+  
+  // AI customization
+  aiPrompts     Json?      // AI prompts used to generate this plan
+  personalizations Json?   // User customizations
+  
+  // Status and tracking
+  status        PlanStatus @default(DRAFT)
+  progress      Float      @default(0) // Percentage complete
+  
+  // Metadata
+  isTemplate    Boolean    @default(false)
+  isPublic      Boolean    @default(false)
+  tags          String[]
+  
+  // Timestamps
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  startedAt     DateTime?
+  completedAt   DateTime?
+  
+  // Relations
+  parent        User       @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  child         Child?     @relation(fields: [childId], references: [id])
+  family        Family?    @relation(fields: [familyId], references: [id])
+  activities    Activity[]
+  logs          PlanLog[]
+  
+  @@map("parenting_plans")
+}
+
+model PlanLog {
+  id        String   @id @default(cuid())
+  planId    String
+  
+  // Log information
+  title     String
+  content   String
+  logType   String   // "progress", "challenge", "success", "note"
+  data      Json?    // Additional structured data
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  
+  // Relations
+  plan      ParentingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  
+  @@map("plan_logs")
+}
+
+// Activities and Content
+model Activity {
+  id              String             @id @default(cuid())
+  
+  // Activity information
+  title           String
+  description     String
+  instructions    String
+  ageRangeMin     Int                // In months
+  ageRangeMax     Int                // In months
+  duration        Int                // In minutes
+  difficulty      ActivityDifficulty
+  type            ActivityType
+  
+  // Content
+  materials       String[]           // Required materials
+  tags            String[]
+  images          String[]
+  videos          String[]
+  
+  // Metadata
+  isPublic        Boolean            @default(true)
+  isPremium       Boolean            @default(false)
+  ratings         Json?              // User ratings and reviews
+  
+  // AI and learning
+  aiGenerated     Boolean            @default(false)
+  learningOutcomes String[]
+  skills          String[]           // Skills developed
+  
+  // Timestamps
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  
+  // Relations
+  plans           ParentingPlan[]
+  logs            ActivityLog[]
+  familyActivities FamilyActivity[]
+  
+  @@map("activities")
+}
+
+model ActivityLog {
+  id            String   @id @default(cuid())
+  activityId    String
+  childId       String
+  userId        String   // Who logged this activity
+  
+  // Log information
+  completedAt   DateTime
+  duration      Int?     // Actual duration in minutes
+  enjoyment     Int?     // 1-5 rating
+  difficulty    Int?     // 1-5 rating
+  notes         String?
+  photos        String[]
+  
+  // Results and observations
+  observations  String?
+  skills        String[] // Skills observed/developed
+  challenges    String[] // Challenges encountered
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  activity      Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  child         Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("activity_logs")
+}
+
+model FamilyActivity {
+  id            String   @id @default(cuid())
+  familyId      String
+  activityId    String
+  
+  // Scheduling
+  scheduledFor  DateTime?
+  completedAt   DateTime?
+  
+  // Family-specific customizations
+  customNotes   String?
+  participants  String[] // Array of family member IDs
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  family        Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  activity      Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  
+  @@unique([familyId, activityId])
+  @@map("family_activities")
+}
+
+// Notifications System
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  
+  // Notification content
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?            // Additional data for the notification
+  
+  // Status
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  
+  // Scheduling
+  scheduledFor DateTime?
+  sentAt    DateTime?
+  
+  // Timestamps
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  
+  // Relations
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+}
+
+// Audit Logging for Security and Compliance
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  
+  // Action information
+  action      String   // "CREATE", "UPDATE", "DELETE", "LOGIN", etc.
+  resource    String   // Table/resource name
+  resourceId  String?  // ID of the affected resource
+  
+  // Change tracking
+  oldValues   Json?    // Previous values
+  newValues   Json?    // New values
+  
+  // Request information
+  ipAddress   String?
+  userAgent   String?
+  sessionId   String?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  user        User?    @relation(fields: [userId], references: [id])
+  
+  @@map("audit_logs")
+}
+
+// Content Management
+model ContentLibrary {
+  id            String   @id @default(cuid())
+  
+  // Content information
+  title         String
+  content       String   @db.Text
+  contentType   String   // "article", "tip", "guide", "video"
+  category      String
+  tags          String[]
+  
+  // Metadata
+  authorId      String?
+  isPublic      Boolean  @default(true)
+  isPremium     Boolean  @default(false)
+  
+  // SEO and discovery
+  slug          String   @unique
+  metaTitle     String?
+  metaDescription String?
+  
+  // Engagement
+  views         Int      @default(0)
+  likes         Int      @default(0)
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  publishedAt   DateTime?
+  
+  @@map("content_library")
+}
