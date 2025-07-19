@@ -2,12 +2,12 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   // Database
-  DATABASE_URL: z.string().min(1),
+  DATABASE_URL: z.string().min(1).optional(),
   DIRECT_URL: z.string().min(1).optional(),
 
   // NextAuth.js
-  NEXTAUTH_URL: z.string().url(),
-  NEXTAUTH_SECRET: z.string().min(1),
+  NEXTAUTH_URL: z.string().optional(),
+  NEXTAUTH_SECRET: z.string().optional(),
 
   // OAuth Providers
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -43,7 +43,7 @@ const envSchema = z.object({
 
   // Application
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  APP_URL: z.string().url(),
+  APP_URL: z.string().optional(),
 });
 
 const parseEnv = () => {
