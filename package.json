@@ -1,0 +1,16 @@
+{
+  "name": "parentwise-landing",
+  "version": "1.0.0",
+  "description": "ParentWise - AI-Powered Parenting Platform Landing Page",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'",
+    "start": "echo 'Static site ready'"
+  },
+  "keywords": ["parenting", "ai", "family", "children"],
+  "author": "ParentWise Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
