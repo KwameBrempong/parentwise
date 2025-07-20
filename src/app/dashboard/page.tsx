@@ -1,19 +1,8 @@
 'use client'
 
-import { useAuth } from '@/hooks/useAuth'
-import { signOut } from 'next-auth/react'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
-
 function DashboardContent() {
-  const { user, isLoading } = useAuth()
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
+  const user = { name: 'Demo User', email: 'demo@example.com', role: 'PARENT', subscriptionTier: 'FREE' }
+  const isLoading = false
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -30,7 +19,7 @@ function DashboardContent() {
                 <p className="text-gray-500">{user?.email}</p>
               </div>
               <button
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={() => window.location.href = '/'}
                 className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md text-sm font-medium text-gray-700 transition-colors"
               >
                 Sign Out
@@ -92,9 +81,5 @@ function DashboardContent() {
 }
 
 export default function Dashboard() {
-  return (
-    <ProtectedRoute>
-      <DashboardContent />
-    </ProtectedRoute>
-  )
+  return <DashboardContent />
 }
