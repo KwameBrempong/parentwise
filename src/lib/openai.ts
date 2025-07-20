@@ -1,10 +1,18 @@
 import OpenAI from 'openai'
 import { env } from './env'
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: env.OPENAI_API_KEY,
-})
+// Initialize OpenAI client with error handling
+let openai: OpenAI | null = null
+
+try {
+  if (env.OPENAI_API_KEY && env.OPENAI_API_KEY.length > 0) {
+    openai = new OpenAI({
+      apiKey: env.OPENAI_API_KEY,
+    })
+  }
+} catch (error) {
+  console.warn('OpenAI initialization failed:', error)
+}
 
 // Types for AI responses
 export interface AIParentingPlanResponse {
@@ -105,6 +113,10 @@ Format the response as a detailed plan that parents can immediately implement.
 `
 
     try {
+      if (!openai) {
+        throw new Error('OpenAI client not initialized. Please check your OPENAI_API_KEY configuration.')
+      }
+
       const completion = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
@@ -179,6 +191,10 @@ Focus on activities that:
 `
 
     try {
+      if (!openai) {
+        throw new Error('OpenAI client not initialized. Please check your OPENAI_API_KEY configuration.')
+      }
+
       const completion = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
@@ -244,6 +260,10 @@ Base your analysis on established developmental milestones and provide encouragi
 `
 
     try {
+      if (!openai) {
+        throw new Error('OpenAI client not initialized. Please check your OPENAI_API_KEY configuration.')
+      }
+
       const completion = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
