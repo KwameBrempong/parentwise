@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useForm } from 'react-hook-form'
@@ -60,7 +60,7 @@ const INTERESTS = [
   'Building', 'Nature', 'Animals', 'Dancing', 'Gaming', 'Math'
 ]
 
-export default function Onboarding() {
+function OnboardingContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
@@ -541,5 +541,17 @@ export default function Onboarding() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function Onboarding() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   )
 }
