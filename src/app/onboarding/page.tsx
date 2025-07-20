@@ -110,15 +110,26 @@ function OnboardingContent() {
     setIsLoading(true)
 
     try {
-      // TODO: Implement onboarding API call
-      console.log('Onboarding data:', data)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
+      const response = await fetch('/api/onboarding', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to complete onboarding')
+      }
+
+      console.log('Onboarding completed:', result)
       router.push('/dashboard')
     } catch (error) {
       console.error('Onboarding error:', error)
+      // You could add a toast notification here
+      alert('Failed to complete onboarding. Please try again.')
     } finally {
       setIsLoading(false)
     }
