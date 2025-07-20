@@ -91,7 +91,22 @@ function SignInContent() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
-    await signIn('google', { callbackUrl })
+    try {
+      const result = await signIn('google', { 
+        callbackUrl,
+        redirect: false 
+      })
+      
+      if (result?.error) {
+        setError('Google sign-in failed. Please try again or contact support.')
+      } else if (result?.ok) {
+        router.push(callbackUrl)
+      }
+    } catch (error) {
+      setError('Google sign-in is not available. Please use email sign-in instead.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (emailSent) {
@@ -136,6 +151,18 @@ function SignInContent() {
               <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
+
+          {/* Demo Notice */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="font-medium text-blue-900 mb-2">🚀 Demo Mode</h3>
+            <p className="text-blue-800 text-sm mb-2">
+              For testing purposes, use these demo credentials:
+            </p>
+            <div className="bg-blue-100 rounded p-2 text-sm font-mono text-blue-900">
+              Email: demo@parentwise.app<br />
+              Password: demo123
+            </div>
+          </div>
 
           {/* OAuth Providers */}
           <button

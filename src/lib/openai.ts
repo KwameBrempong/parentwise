@@ -333,7 +333,7 @@ Base your analysis on established developmental milestones and provide encouragi
         ageRangeMin: Math.max(input.childAge - 12, 12),
         ageRangeMax: input.childAge + 12,
         duration: input.duration,
-        difficulty: difficultyMap[input.difficulty] || 'MEDIUM',
+        difficulty: difficultyMap[input.difficulty as keyof typeof difficultyMap] || 'MEDIUM',
         type: 'CREATIVE',
         materials: ['Paper', 'Colors', 'Glue', 'Scissors'],
         learningOutcomes: ['Creativity', 'Fine motor skills', 'Self-expression'],

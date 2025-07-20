@@ -22,23 +22,30 @@ export const authOptions: NextAuthOptions = {
     newUser: '/onboarding',
   },
   providers: [
-    GoogleProvider({
-      clientId: env.GOOGLE_CLIENT_ID || '',
-      clientSecret: env.GOOGLE_CLIENT_SECRET || '',
-      allowDangerousEmailAccountLinking: true,
-    }),
-    EmailProvider({
-      server: {
-        host: env.EMAIL_SERVER_HOST,
-        port: parseInt(env.EMAIL_SERVER_PORT || '587'),
-        auth: {
-          user: env.EMAIL_SERVER_USER,
-          pass: env.EMAIL_SERVER_PASSWORD,
+    // Only include Google provider if credentials are configured
+    ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? [
+      GoogleProvider({
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+        allowDangerousEmailAccountLinking: true,
+      })
+    ] : []),
+    
+    // Only include Email provider if SMTP is configured
+    ...(env.EMAIL_SERVER_HOST && env.EMAIL_SERVER_USER && env.EMAIL_SERVER_PASSWORD ? [
+      EmailProvider({
+        server: {
+          host: env.EMAIL_SERVER_HOST,
+          port: parseInt(env.EMAIL_SERVER_PORT || '587'),
+          auth: {
+            user: env.EMAIL_SERVER_USER,
+            pass: env.EMAIL_SERVER_PASSWORD,
+          },
         },
-      },
-      from: env.EMAIL_FROM,
-      sendVerificationRequest,
-    }),
+        from: env.EMAIL_FROM,
+        sendVerificationRequest,
+      })
+    ] : []),
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -50,16 +57,59 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
+        // Demo mode - allow specific demo credentials
+        if (credentials.email === 'demo@parentwise.app' && credentials.password === 'demo123') {
+          // Check if demo user exists, create if not
+          let user = await userService.getUserByEmail(credentials.email)
+          
+          if (!user) {
+            // Create demo user
+            await userService.createUser({
+              email: credentials.email,
+              name: 'Demo Parent',
+              role: 'PARENT',
+            })
+            
+            // Fetch the created user with relationships
+            user = await userService.getUserByEmail(credentials.email)
+            if (!user) {
+              return null
+            }
+          }
+
+          // Update last login
+          await userService.updateLastLogin(user.id)
+
+          // Log authentication event
+          await auditService.log({
+            userId: user.id,
+            action: 'LOGIN',
+            resource: 'User',
+            resourceId: user.id,
+            ipAddress: req.headers?.['x-forwarded-for'] as string || 
+                      req.headers?.['x-real-ip'] as string || 
+                      'unknown',
+            userAgent: req.headers?.['user-agent'],
+          })
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            role: user.role,
+          }
+        }
+
+        // Regular user authentication
         const user = await userService.getUserByEmail(credentials.email)
         
         if (!user) {
           return null
         }
 
-        // For demo purposes, we'll create a simple password check
-        // In production, you'd have password hashing from registration
-        const isPasswordValid = credentials.password === 'demo123' || 
-          await bcrypt.compare(credentials.password, user.email) // Placeholder
+        // For production, implement proper password hashing
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.email) // Placeholder
 
         if (!isPasswordValid) {
           return null

@@ -71,11 +71,26 @@ function SignUpContent() {
 
   const handleGoogleSignUp = async () => {
     setIsLoading(true)
-    const callbackUrl = familyCodeParam 
-      ? `/onboarding?familyCode=${familyCodeParam}`
-      : '/onboarding'
-    
-    await signIn('google', { callbackUrl })
+    try {
+      const callbackUrl = familyCodeParam 
+        ? `/onboarding?familyCode=${familyCodeParam}`
+        : '/onboarding'
+      
+      const result = await signIn('google', { 
+        callbackUrl,
+        redirect: false 
+      })
+      
+      if (result?.error) {
+        setError('Google sign-up failed. Please try again or contact support.')
+      } else if (result?.ok) {
+        router.push(callbackUrl)
+      }
+    } catch (error) {
+      setError('Google sign-up is not available. Please use email sign-up instead.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (emailSent) {
