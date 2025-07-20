@@ -2,15 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Ensure base styles are applied */
-html, body {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Fallback styles for when Tailwind doesn't load */
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  *, *::before, *::after {
+    box-sizing: inherit;
+  }
 }
 
-*, *::before, *::after {
-  box-sizing: inherit;
+/* Critical fallback styles for production */
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.bg-gradient-to-br {
+  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+}
+
+/* Button fallback styles */
+a[href="/auth/signup"] {
+  background: linear-gradient(90deg, #2563eb 0%, #4f46e5 100%) !important;
+  color: white !important;
+  padding: 1rem 2rem !important;
+  border-radius: 9999px !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+  font-weight: 600 !important;
+  min-width: 200px !important;
+  text-align: center !important;
+}
+
+a[href="/auth/signin"] {
+  border: 2px solid #2563eb !important;
+  color: #2563eb !important;
+  padding: 1rem 2rem !important;
+  border-radius: 9999px !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+  font-weight: 600 !important;
+  min-width: 200px !important;
+  text-align: center !important;
+  background: transparent !important;
+}
+
+a[href="/auth/signin"]:hover {
+  background: #2563eb !important;
+  color: white !important;
 }
 
 /* Custom scrollbar */
