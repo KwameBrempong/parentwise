@@ -138,21 +138,23 @@ export async function POST(request: NextRequest) {
       })
 
       // Log onboarding completion
-      await auditService.log({
-        userId: updatedUser.id,
-        action: 'ONBOARDING_COMPLETE',
-        resource: 'User',
-        resourceId: updatedUser.id,
-        newValues: {
-          familySetup: validatedData.familySetup,
-          childName: validatedData.childName,
-          familyId: family?.id,
+      await tx.auditLog.create({
+        data: {
+          userId: updatedUser.id,
+          action: 'ONBOARDING_COMPLETE',
+          resource: 'User',
+          resourceId: updatedUser.id,
+          newValues: {
+            familySetup: validatedData.familySetup,
+            childName: validatedData.childName,
+            familyId: family?.id,
+          },
+          ipAddress: request.headers.get('x-forwarded-for') || 
+                     request.headers.get('x-real-ip') || 
+                     'unknown',
+          userAgent: request.headers.get('user-agent'),
         },
-        ipAddress: request.headers.get('x-forwarded-for') || 
-                   request.headers.get('x-real-ip') || 
-                   'unknown',
-        userAgent: request.headers.get('user-agent'),
-      }, tx)
+      })
 
       return {
         user: updatedUser,
