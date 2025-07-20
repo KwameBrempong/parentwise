@@ -79,6 +79,32 @@ export default function HomePage() {
           </Link>
         </div>
 
+        {/* AI Features Preview */}
+        <div 
+          className="mt-8"
+          style={{ marginTop: '2rem' }}
+        >
+          <Link 
+            href="/ai"
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full text-sm font-semibold hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+            style={{
+              background: 'linear-gradient(90deg, #9333ea 0%, #ec4899 100%)',
+              color: 'white',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '9999px',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <span style={{ marginRight: '0.5rem' }}>🤖</span>
+            Try AI Features (Beta)
+          </Link>
+        </div>
+
         <div 
           className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8"
           style={{ marginTop: '4rem', display: 'grid', gap: '2rem' }}
